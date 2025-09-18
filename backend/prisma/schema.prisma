@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AppUser {
+  id               Int             @id @default(autoincrement())
+  fullName         String          @map("full_name")
+  email            String?         @unique
+  password         String?
+  referralCode     String?         @unique @map("referral_code")
+  referredBy       Int?            @map("referred_by")
+  managerId        Int?            @map("manager_id")
+  role             String          @default("EMPLOYEE") // EMPLOYEE, MANAGER, ADMIN
+  status           String          @default("ACTIVE")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  managerBookings     Booking[]           @relation("ManagerBookings")
+  referrerBookings    Booking[]           @relation("ReferrerBookings")
+  sellerBookings      Booking[]           @relation("SellerBookings")
+  ownedProducts       Product[]           @relation("ProductOwner")
+  revenueLedger       RevenueLedger[]
+  userRanks           UserRank[]
+  wallet              Wallet?
+  createdTransactions WalletTransaction[] @relation("CreatedTransactions")
+  commissionPayouts   CommissionPayout[]  @relation("CommissionPayouts")
+  referrer            AppUser?            @relation("UserReferrals", fields: [referredBy], references: [id])
+  referrals           AppUser[]           @relation("UserReferrals")
+  manager             AppUser?            @relation("UserManager", fields: [managerId], references: [id])
+  managedUsers        AppUser[]           @relation("UserManager")
+
+  @@map("app_users")
+}
+
+model Rank {
+  id         Int         @id @default(autoincrement())
+  name       String
+  rankShares RankShare[]
+  userRanks  UserRank[]
+
+  @@map("ranks")
+}
+
+model RankShare {
+  id     Int     @id @default(autoincrement())
+  role   String?
+  rankId Int?    @map("rank_id")
+  pct    Decimal @db.Decimal(5, 4)
+  rank   Rank?   @relation(fields: [rankId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("rank_shares")
+}
+
+model UserRank {
+  userId        Int       @map("user_id")
+  rankId        Int       @map("rank_id")
+  effectiveFrom DateTime  @default(now()) @map("effective_from") @db.Timestamp(6)
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamp(6)
+  rank          Rank      @relation(fields: [rankId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user          AppUser   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userId, rankId, effectiveFrom])
+  @@map("user_ranks")
+}
+
+model Product {
+  id                 Int       @id @default(autoincrement())
+  ownerUserId        Int?      @map("owner_user_id")
+  name               String?
+  description        String?
+  images             String?   // JSON string containing array of image URLs
+  basePrice          Decimal?  @map("base_price") @db.Decimal(18, 2) // Base price for the product
+  commissionPct      Decimal   @map("commission_pct") @db.Decimal(5, 4)
+  providerDesiredPct Decimal   @map("provider_desired_pct") @db.Decimal(5, 4)
+  status             String    @default("SUBMITTED") // SUBMITTED, APPROVED, REJECTED
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  bookings           Booking[]
+  owner              AppUser?  @relation("ProductOwner", fields: [ownerUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("products")
+}
+
+model Booking {
+  id             Int             @id @default(autoincrement())
+  productId      Int?            @map("product_id")
+  sellerUserId   Int?            @map("seller_user_id")
+  referrerUserId Int?            @map("referrer_user_id")
+  managerUserId  Int?            @map("manager_user_id")
+  price          Decimal         @db.Decimal(18, 2)
+  status         String          @default("PENDING") // PENDING, COMPLETED, CANCELED
+  closedAt       DateTime?       @map("closed_at") @db.Timestamp(6)
+
+  // Customer information
+  customerName   String?         @map("customer_name")
+  customerPhone  String?         @map("customer_phone")
+  customerEmail  String?         @map("customer_email")
+
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  manager        AppUser?        @relation("ManagerBookings", fields: [managerUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  product        Product?        @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  referrer       AppUser?        @relation("ReferrerBookings", fields: [referrerUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  seller         AppUser?        @relation("SellerBookings", fields: [sellerUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  revenueLedger  RevenueLedger[]
+
+  @@map("bookings")
+}
+
+model RevenueLedger {
+  id                Int       @id @default(autoincrement())
+  bookingId         Int?      @map("booking_id")
+  role              String?
+  beneficiaryUserId Int?      @map("beneficiary_user_id")
+  pct               Decimal?  @db.Decimal(5, 4)
+  amount            Decimal?  @db.Decimal(18, 2)
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  beneficiaryUser   AppUser?  @relation(fields: [beneficiaryUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  booking           Booking?  @relation(fields: [bookingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("revenue_ledger")
+}
+
+model Wallet {
+  id           Int                 @id @default(autoincrement())
+  userId       Int                 @unique @map("user_id")
+  balance      Decimal             @default(0) @db.Decimal(18, 2)
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  user         AppUser             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id           Int      @id @default(autoincrement())
+  walletId     Int      @map("wallet_id")
+  amount       Decimal  @db.Decimal(18, 2)
+  type         String   // COMMISSION_DIRECT, COMMISSION_REFERRAL, ADJUSTMENT_CREDIT, ADJUSTMENT_DEBIT
+  refId        Int?     @map("ref_id") // Reference to booking, adjustment, etc.
+  description  String?
+  balanceAfter Decimal  @map("balance_after") @db.Decimal(18, 2)
+  createdBy    Int?     @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  wallet       Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  creator      AppUser? @relation("CreatedTransactions", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@map("wallet_transactions")
+}
+
+model CommissionPayout {
+  id                Int      @id @default(autoincrement())
+  transactionRefId  Int      @map("transaction_ref_id") // Reference to booking, sale, etc.
+  transactionType   String   @map("transaction_type") // BOOKING, SALE, etc.
+  role              String   // DIRECT_SALES, REFERRER, HEAD_OWNER, MGR_SALES, MGR_PRODUCT, MGR_REGION
+  userId            Int      @map("user_id")
+  amountFinal       Decimal  @map("amount_final") @db.Decimal(18, 2)
+  amountOriginal    Decimal  @map("amount_original") @db.Decimal(18, 2)
+  kFactor           Decimal  @map("k_factor") @default(1) @db.Decimal(8, 6) // Hệ số co giãn
+  policyUsed        String   @map("policy_used") // priority, prorate
+  commissionPool    Decimal  @map("commission_pool") @db.Decimal(18, 2)
+  note              String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              AppUser  @relation("CommissionPayouts", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("commission_payouts")
+}

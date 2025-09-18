@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BDS Web Test - Login & Logout (Fixed)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #ff3838;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .user-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .user-info h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-info p {
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .status {
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 BDS Web Test (Fixed)</h1>
+            <p>Test Login & Logout Functionality</p>
+        </div>
+        
+        <!-- Status Messages -->
+        <div id="status" class="status hidden"></div>
+        
+        <!-- Login Form -->
+        <div id="loginForm">
+            <form id="loginFormElement">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" value="admin@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" value="123456" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <span id="loginText">Đăng nhập</span>
+                    <span id="loginLoading" class="loading hidden"></span>
+                </button>
+            </form>
+            
+            <div style="margin-top: 1rem; text-align: center; color: #666; font-size: 0.9rem;">
+                <p>Test accounts:</p>
+                <p>admin@example.com / 123456</p>
+                <p>manager@example.com / 123456</p>
+            </div>
+        </div>
+        
+        <!-- User Dashboard -->
+        <div id="userDashboard" class="hidden">
+            <div class="user-info">
+                <h3>👤 Thông tin người dùng</h3>
+                <p><strong>Tên:</strong> <span id="userName"></span></p>
+                <p><strong>Email:</strong> <span id="userEmail"></span></p>
+                <p><strong>Mã giới thiệu:</strong> <span id="userReferralCode"></span></p>
+                <p><strong>Manager:</strong> <span id="userManager"></span></p>
+                <p><strong>Quản lý:</strong> <span id="managedCount"></span> người</p>
+            </div>
+            
+            <button class="btn btn-danger" id="logoutBtn">
+                <span id="logoutText">🚪 Đăng xuất</span>
+                <span id="logoutLoading" class="loading hidden"></span>
+            </button>
+            
+            <button class="btn btn-primary" id="refreshBtn" style="background: #28a745;">
+                🔄 Làm mới thông tin
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM Content Loaded - Starting BDS Web Test...');
+            
+            const API_BASE_URL = 'http://localhost:3000';
+            
+            // State variables
+            let currentUser = null;
+            let accessToken = null;
+            
+            // DOM elements
+            const loginForm = document.getElementById('loginForm');
+            const userDashboard = document.getElementById('userDashboard');
+            const loginFormElement = document.getElementById('loginFormElement');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const status = document.getElementById('status');
+            
+            // Debug DOM elements
+            console.log('🔧 DOM Elements Check:');
+            console.log('   loginForm:', loginForm ? '✅' : '❌');
+            console.log('   userDashboard:', userDashboard ? '✅' : '❌');
+            console.log('   logoutBtn:', logoutBtn ? '✅' : '❌');
+            console.log('   refreshBtn:', refreshBtn ? '✅' : '❌');
+            
+            // Utility functions
+            function showStatus(message, type = 'success') {
+                console.log(`📢 Status: ${message} (${type})`);
+                status.textContent = message;
+                status.className = `status ${type}`;
+                status.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    status.classList.add('hidden');
+                }, 5000);
+            }
+            
+            function setLoading(btnId, loading) {
+                const btn = document.getElementById(btnId);
+                const text = document.getElementById(btnId.replace('Btn', 'Text'));
+                const loadingSpinner = document.getElementById(btnId.replace('Btn', 'Loading'));
+                
+                if (btn && text && loadingSpinner) {
+                    btn.disabled = loading;
+                    if (loading) {
+                        text.classList.add('hidden');
+                        loadingSpinner.classList.remove('hidden');
+                    } else {
+                        text.classList.remove('hidden');
+                        loadingSpinner.classList.add('hidden');
+                    }
+                }
+            }
+            
+            function showLoginForm() {
+                console.log('🔵 showLoginForm() called');
+                if (loginForm && userDashboard) {
+                    loginForm.classList.remove('hidden');
+                    userDashboard.classList.add('hidden');
+                    console.log('🔵 Login form is now visible, dashboard hidden');
+                }
+            }
+            
+            function showUserDashboard() {
+                console.log('🟢 showUserDashboard() called');
+                if (loginForm && userDashboard) {
+                    loginForm.classList.add('hidden');
+                    userDashboard.classList.remove('hidden');
+                    console.log('🟢 Dashboard is now visible, login form hidden');
+                }
+            }
+            
+            function updateUserInfo(user) {
+                console.log('📝 Updating user info:', user.fullName);
+                const elements = {
+                    userName: document.getElementById('userName'),
+                    userEmail: document.getElementById('userEmail'),
+                    userReferralCode: document.getElementById('userReferralCode'),
+                    userManager: document.getElementById('userManager'),
+                    managedCount: document.getElementById('managedCount')
+                };
+                
+                if (elements.userName) elements.userName.textContent = user.fullName;
+                if (elements.userEmail) elements.userEmail.textContent = user.email;
+                if (elements.userReferralCode) elements.userReferralCode.textContent = user.referralCode || 'N/A';
+                if (elements.userManager) elements.userManager.textContent = user.manager?.fullName || 'Không có';
+                if (elements.managedCount) elements.managedCount.textContent = user.managedUsers?.length || 0;
+            }
+            
+            // API functions
+            async function login(email, password) {
+                console.log('🔐 Attempting login for:', email);
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Login failed');
+                }
+                
+                return response.json();
+            }
+            
+            async function getUserProfile() {
+                console.log('👤 Getting user profile...');
+                const response = await fetch(`${API_BASE_URL}/users/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to get user profile');
+                }
+                
+                return response.json();
+            }
+            
+            // Event handlers
+            if (loginFormElement) {
+                loginFormElement.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log('📝 Login form submitted');
+                    
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    
+                    setLoading('loginBtn', true);
+                    
+                    try {
+                        const result = await login(email, password);
+                        accessToken = result.access_token;
+                        currentUser = result.user;
+                        
+                        console.log('✅ Login successful:', currentUser.fullName);
+                        
+                        // Get full user profile
+                        const fullProfile = await getUserProfile();
+                        
+                        updateUserInfo(fullProfile);
+                        showUserDashboard();
+                        showStatus('Đăng nhập thành công!', 'success');
+                        
+                        // Store in localStorage for persistence
+                        localStorage.setItem('accessToken', accessToken);
+                        localStorage.setItem('currentUser', JSON.stringify(fullProfile));
+                        
+                    } catch (error) {
+                        console.error('❌ Login failed:', error);
+                        showStatus(`Đăng nhập thất bại: ${error.message}`, 'error');
+                    } finally {
+                        setLoading('loginBtn', false);
+                    }
+                });
+            }
+            
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    console.log('🔴 Logout button clicked!');
+                    setLoading('logoutBtn', true);
+                    
+                    try {
+                        console.log('🔴 Starting logout process...');
+                        
+                        // Clear local storage
+                        console.log('🔴 Clearing localStorage...');
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('currentUser');
+                        console.log('🔴 localStorage cleared');
+                        
+                        // Reset state
+                        console.log('🔴 Resetting state...');
+                        accessToken = null;
+                        currentUser = null;
+                        console.log('🔴 State reset');
+                        
+                        // Show login form
+                        console.log('🔴 Showing login form...');
+                        showLoginForm();
+                        console.log('🔴 Login form shown');
+                        
+                        showStatus('Đăng xuất thành công!', 'success');
+                        console.log('🔴 Logout completed successfully!');
+                        
+                    } catch (error) {
+                        console.error('🔴 Logout error:', error);
+                        showStatus(`Đăng xuất thất bại: ${error.message}`, 'error');
+                    } finally {
+                        setLoading('logoutBtn', false);
+                        console.log('🔴 Logout loading state cleared');
+                    }
+                });
+            } else {
+                console.error('❌ Logout button not found!');
+            }
+            
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', async () => {
+                    if (!accessToken) return;
+                    
+                    console.log('🔄 Refreshing user info...');
+                    try {
+                        const fullProfile = await getUserProfile();
+                        updateUserInfo(fullProfile);
+                        showStatus('Thông tin đã được cập nhật!', 'success');
+                    } catch (error) {
+                        console.error('❌ Refresh failed:', error);
+                        showStatus(`Không thể cập nhật thông tin: ${error.message}`, 'error');
+                        // If token is invalid, logout
+                        if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                            if (logoutBtn) logoutBtn.click();
+                        }
+                    }
+                });
+            }
+            
+            // Initialize app
+            function initApp() {
+                console.log('🚀 Initializing app...');
+                
+                // Check if user is already logged in
+                const storedToken = localStorage.getItem('accessToken');
+                const storedUser = localStorage.getItem('currentUser');
+                
+                if (storedToken && storedUser) {
+                    console.log('📱 Found stored credentials, auto-login...');
+                    accessToken = storedToken;
+                    currentUser = JSON.parse(storedUser);
+                    updateUserInfo(currentUser);
+                    showUserDashboard();
+                    
+                    // Verify token is still valid
+                    if (refreshBtn) refreshBtn.click();
+                } else {
+                    console.log('🔑 No stored credentials, showing login form');
+                    showLoginForm();
+                }
+            }
+            
+            // Start the app
+            console.log('🎯 Starting app initialization...');
+            initApp();
+            console.log('✅ App initialization completed');
+            
+        }); // End DOMContentLoaded
+    </script>
+</body>
+</html>

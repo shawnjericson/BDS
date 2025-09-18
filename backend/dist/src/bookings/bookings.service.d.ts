@@ -1,0 +1,588 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateBookingDto } from './dto/create-booking.dto';
+import { UpdateBookingDto, UpdateBookingStatusDto, BookingStatus } from './dto/update-booking.dto';
+import { CommissionInfoDto } from './dto/commission-info.dto';
+import { CommissionCalculationDto } from './dto/commission-calculation.dto';
+import { CommissionCalculatorService } from '../commission/commission-calculator.service';
+import { RevenueLedgerService } from '../revenue/revenue-ledger.service';
+export declare class BookingsService {
+    private prisma;
+    private commissionCalculatorService;
+    private revenueLedgerService;
+    constructor(prisma: PrismaService, commissionCalculatorService: CommissionCalculatorService, revenueLedgerService: RevenueLedgerService);
+    create(createBookingDto: CreateBookingDto, userId: number): Promise<{
+        referrer: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        manager: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        product: ({
+            owner: {
+                id: number;
+                role: string;
+                email: string | null;
+                referralCode: string | null;
+                fullName: string;
+                password: string | null;
+                referredBy: number | null;
+                managerId: number | null;
+                status: string;
+                createdAt: Date;
+                updatedAt: Date;
+            } | null;
+        } & {
+            id: number;
+            name: string | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerUserId: number | null;
+            description: string | null;
+            images: string | null;
+            basePrice: import("@prisma/client/runtime/library").Decimal | null;
+            commissionPct: import("@prisma/client/runtime/library").Decimal;
+            providerDesiredPct: import("@prisma/client/runtime/library").Decimal;
+        }) | null;
+        seller: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+    } & {
+        id: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        referrerUserId: number | null;
+        managerUserId: number | null;
+        productId: number | null;
+        sellerUserId: number | null;
+        price: import("@prisma/client/runtime/library").Decimal;
+        closedAt: Date | null;
+        customerName: string | null;
+        customerPhone: string | null;
+        customerEmail: string | null;
+    }>;
+    findAll(status?: BookingStatus, userId?: number): Promise<({
+        revenueLedger: {
+            id: number;
+            role: string | null;
+            pct: import("@prisma/client/runtime/library").Decimal | null;
+            createdAt: Date | null;
+            amount: import("@prisma/client/runtime/library").Decimal | null;
+            bookingId: number | null;
+            beneficiaryUserId: number | null;
+        }[];
+        referrer: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        manager: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        product: ({
+            owner: {
+                id: number;
+                role: string;
+                email: string | null;
+                referralCode: string | null;
+                fullName: string;
+                password: string | null;
+                referredBy: number | null;
+                managerId: number | null;
+                status: string;
+                createdAt: Date;
+                updatedAt: Date;
+            } | null;
+        } & {
+            id: number;
+            name: string | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerUserId: number | null;
+            description: string | null;
+            images: string | null;
+            basePrice: import("@prisma/client/runtime/library").Decimal | null;
+            commissionPct: import("@prisma/client/runtime/library").Decimal;
+            providerDesiredPct: import("@prisma/client/runtime/library").Decimal;
+        }) | null;
+        seller: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+    } & {
+        id: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        referrerUserId: number | null;
+        managerUserId: number | null;
+        productId: number | null;
+        sellerUserId: number | null;
+        price: import("@prisma/client/runtime/library").Decimal;
+        closedAt: Date | null;
+        customerName: string | null;
+        customerPhone: string | null;
+        customerEmail: string | null;
+    })[]>;
+    findOne(id: number): Promise<{
+        revenueLedger: ({
+            beneficiaryUser: {
+                id: number;
+                role: string;
+                email: string | null;
+                referralCode: string | null;
+                fullName: string;
+                password: string | null;
+                referredBy: number | null;
+                managerId: number | null;
+                status: string;
+                createdAt: Date;
+                updatedAt: Date;
+            } | null;
+        } & {
+            id: number;
+            role: string | null;
+            pct: import("@prisma/client/runtime/library").Decimal | null;
+            createdAt: Date | null;
+            amount: import("@prisma/client/runtime/library").Decimal | null;
+            bookingId: number | null;
+            beneficiaryUserId: number | null;
+        })[];
+        referrer: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        manager: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        product: ({
+            owner: {
+                id: number;
+                role: string;
+                email: string | null;
+                referralCode: string | null;
+                fullName: string;
+                password: string | null;
+                referredBy: number | null;
+                managerId: number | null;
+                status: string;
+                createdAt: Date;
+                updatedAt: Date;
+            } | null;
+        } & {
+            id: number;
+            name: string | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerUserId: number | null;
+            description: string | null;
+            images: string | null;
+            basePrice: import("@prisma/client/runtime/library").Decimal | null;
+            commissionPct: import("@prisma/client/runtime/library").Decimal;
+            providerDesiredPct: import("@prisma/client/runtime/library").Decimal;
+        }) | null;
+        seller: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+    } & {
+        id: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        referrerUserId: number | null;
+        managerUserId: number | null;
+        productId: number | null;
+        sellerUserId: number | null;
+        price: import("@prisma/client/runtime/library").Decimal;
+        closedAt: Date | null;
+        customerName: string | null;
+        customerPhone: string | null;
+        customerEmail: string | null;
+    }>;
+    update(id: number, updateBookingDto: UpdateBookingDto, userId: number, isAdmin?: boolean): Promise<{
+        referrer: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        manager: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        product: ({
+            owner: {
+                id: number;
+                role: string;
+                email: string | null;
+                referralCode: string | null;
+                fullName: string;
+                password: string | null;
+                referredBy: number | null;
+                managerId: number | null;
+                status: string;
+                createdAt: Date;
+                updatedAt: Date;
+            } | null;
+        } & {
+            id: number;
+            name: string | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerUserId: number | null;
+            description: string | null;
+            images: string | null;
+            basePrice: import("@prisma/client/runtime/library").Decimal | null;
+            commissionPct: import("@prisma/client/runtime/library").Decimal;
+            providerDesiredPct: import("@prisma/client/runtime/library").Decimal;
+        }) | null;
+        seller: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+    } & {
+        id: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        referrerUserId: number | null;
+        managerUserId: number | null;
+        productId: number | null;
+        sellerUserId: number | null;
+        price: import("@prisma/client/runtime/library").Decimal;
+        closedAt: Date | null;
+        customerName: string | null;
+        customerPhone: string | null;
+        customerEmail: string | null;
+    }>;
+    updateStatus(id: number, updateStatusDto: UpdateBookingStatusDto): Promise<({
+        referrer: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        manager: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        product: ({
+            owner: {
+                id: number;
+                role: string;
+                email: string | null;
+                referralCode: string | null;
+                fullName: string;
+                password: string | null;
+                referredBy: number | null;
+                managerId: number | null;
+                status: string;
+                createdAt: Date;
+                updatedAt: Date;
+            } | null;
+        } & {
+            id: number;
+            name: string | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerUserId: number | null;
+            description: string | null;
+            images: string | null;
+            basePrice: import("@prisma/client/runtime/library").Decimal | null;
+            commissionPct: import("@prisma/client/runtime/library").Decimal;
+            providerDesiredPct: import("@prisma/client/runtime/library").Decimal;
+        }) | null;
+        seller: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+    } & {
+        id: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        referrerUserId: number | null;
+        managerUserId: number | null;
+        productId: number | null;
+        sellerUserId: number | null;
+        price: import("@prisma/client/runtime/library").Decimal;
+        closedAt: Date | null;
+        customerName: string | null;
+        customerPhone: string | null;
+        customerEmail: string | null;
+    }) | null>;
+    private completeBooking;
+    private cancelBooking;
+    private distributeRevenue;
+    private createWalletTransactions;
+    private getTransactionType;
+    private revertRevenue;
+    private revertWalletTransactions;
+    private getCurrentUserRank;
+    private getRankShare;
+    private canUserAccessBooking;
+    getMyBookings(userId: number): Promise<({
+        revenueLedger: {
+            id: number;
+            role: string | null;
+            pct: import("@prisma/client/runtime/library").Decimal | null;
+            createdAt: Date | null;
+            amount: import("@prisma/client/runtime/library").Decimal | null;
+            bookingId: number | null;
+            beneficiaryUserId: number | null;
+        }[];
+        referrer: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        manager: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+        product: ({
+            owner: {
+                id: number;
+                role: string;
+                email: string | null;
+                referralCode: string | null;
+                fullName: string;
+                password: string | null;
+                referredBy: number | null;
+                managerId: number | null;
+                status: string;
+                createdAt: Date;
+                updatedAt: Date;
+            } | null;
+        } & {
+            id: number;
+            name: string | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            ownerUserId: number | null;
+            description: string | null;
+            images: string | null;
+            basePrice: import("@prisma/client/runtime/library").Decimal | null;
+            commissionPct: import("@prisma/client/runtime/library").Decimal;
+            providerDesiredPct: import("@prisma/client/runtime/library").Decimal;
+        }) | null;
+        seller: {
+            id: number;
+            role: string;
+            email: string | null;
+            referralCode: string | null;
+            fullName: string;
+            password: string | null;
+            referredBy: number | null;
+            managerId: number | null;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+        } | null;
+    } & {
+        id: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        referrerUserId: number | null;
+        managerUserId: number | null;
+        productId: number | null;
+        sellerUserId: number | null;
+        price: import("@prisma/client/runtime/library").Decimal;
+        closedAt: Date | null;
+        customerName: string | null;
+        customerPhone: string | null;
+        customerEmail: string | null;
+    })[]>;
+    remove(id: number, userId: number, isAdmin?: boolean): Promise<{
+        id: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        referrerUserId: number | null;
+        managerUserId: number | null;
+        productId: number | null;
+        sellerUserId: number | null;
+        price: import("@prisma/client/runtime/library").Decimal;
+        closedAt: Date | null;
+        customerName: string | null;
+        customerPhone: string | null;
+        customerEmail: string | null;
+    }>;
+    private distributeRevenueWithCommissionCalculator;
+    getCommissionInfo(bookingId: number): Promise<CommissionInfoDto>;
+    private getUserWithRank;
+    private getUserBasicInfo;
+    calculateCommission(bookingId: number): Promise<CommissionCalculationDto>;
+    getMyCommissionForBooking(bookingId: number, userId: number): Promise<{
+        bookingId: number;
+        bookingPrice: import("@prisma/client/runtime/library").Decimal;
+        productName: string;
+        userRoles: string[];
+        userCommission: number;
+        commissionDetails: any[];
+        totalCommission: number;
+        createdAt: Date;
+        status: string;
+    }>;
+    getTotalBookingsCount(): Promise<number>;
+}

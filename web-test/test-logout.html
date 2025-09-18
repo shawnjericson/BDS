@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Logout - Simple Version</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .btn-primary { background: #007bff; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .hidden { display: none; }
+        
+        .debug {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Logout - Simple Version</h1>
+        <p>Simplified test để debug logout issue</p>
+        
+        <div id="status" class="status info">
+            Chưa đăng nhập
+        </div>
+        
+        <div id="loginSection">
+            <h3>📝 Login Test</h3>
+            <button class="btn btn-primary" onclick="testLogin()">Đăng nhập Admin</button>
+        </div>
+        
+        <div id="loggedInSection" class="hidden">
+            <h3>👤 Đã đăng nhập</h3>
+            <p><strong>User:</strong> <span id="userName"></span></p>
+            <p><strong>Email:</strong> <span id="userEmail"></span></p>
+            
+            <button class="btn btn-danger" onclick="testLogout()">🚪 Đăng xuất</button>
+            <button class="btn btn-warning" onclick="forceLogout()">⚡ Force Logout</button>
+            <button class="btn btn-success" onclick="checkState()">🔍 Check State</button>
+        </div>
+        
+        <div class="debug" id="debugOutput">
+            Debug output sẽ hiển thị ở đây...
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        let currentUser = null;
+        let accessToken = null;
+        
+        function log(message) {
+            const debugOutput = document.getElementById('debugOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            debugOutput.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+        
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        function updateUI() {
+            const loginSection = document.getElementById('loginSection');
+            const loggedInSection = document.getElementById('loggedInSection');
+            
+            if (currentUser && accessToken) {
+                loginSection.classList.add('hidden');
+                loggedInSection.classList.remove('hidden');
+                
+                document.getElementById('userName').textContent = currentUser.fullName;
+                document.getElementById('userEmail').textContent = currentUser.email;
+                
+                showStatus(`Đã đăng nhập: ${currentUser.fullName}`, 'success');
+            } else {
+                loginSection.classList.remove('hidden');
+                loggedInSection.classList.add('hidden');
+                showStatus('Chưa đăng nhập', 'info');
+            }
+        }
+        
+        async function testLogin() {
+            log('🔵 Starting login test...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@example.com',
+                        password: '123456'
+                    }),
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                currentUser = data.user;
+                accessToken = data.access_token;
+                
+                // Store in localStorage
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                log(`✅ Login successful: ${currentUser.fullName}`);
+                log(`🔑 Token: ${accessToken.substring(0, 20)}...`);
+                
+                updateUI();
+                
+            } catch (error) {
+                log(`❌ Login failed: ${error.message}`);
+                showStatus(`Login failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testLogout() {
+            log('🔴 Starting logout test...');
+            
+            try {
+                log('🔴 Current state before logout:');
+                log(`   currentUser: ${currentUser ? currentUser.fullName : 'null'}`);
+                log(`   accessToken: ${accessToken ? 'exists' : 'null'}`);
+                log(`   localStorage accessToken: ${localStorage.getItem('accessToken') ? 'exists' : 'null'}`);
+                log(`   localStorage currentUser: ${localStorage.getItem('currentUser') ? 'exists' : 'null'}`);
+                
+                // Clear localStorage
+                log('🔴 Clearing localStorage...');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('currentUser');
+                log('🔴 localStorage cleared');
+                
+                // Reset variables
+                log('🔴 Resetting variables...');
+                currentUser = null;
+                accessToken = null;
+                log('🔴 Variables reset');
+                
+                // Update UI
+                log('🔴 Updating UI...');
+                updateUI();
+                log('🔴 UI updated');
+                
+                log('✅ Logout completed successfully!');
+                
+            } catch (error) {
+                log(`❌ Logout failed: ${error.message}`);
+                showStatus(`Logout failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function forceLogout() {
+            log('⚡ Force logout...');
+            
+            // Clear everything
+            localStorage.clear();
+            currentUser = null;
+            accessToken = null;
+            
+            updateUI();
+            log('⚡ Force logout completed');
+        }
+        
+        function checkState() {
+            log('🔍 Checking current state:');
+            log(`   currentUser: ${currentUser ? JSON.stringify(currentUser) : 'null'}`);
+            log(`   accessToken: ${accessToken ? accessToken.substring(0, 30) + '...' : 'null'}`);
+            log(`   localStorage accessToken: ${localStorage.getItem('accessToken') ? 'exists' : 'null'}`);
+            log(`   localStorage currentUser: ${localStorage.getItem('currentUser') ? 'exists' : 'null'}`);
+            
+            // Check DOM state
+            const loginSection = document.getElementById('loginSection');
+            const loggedInSection = document.getElementById('loggedInSection');
+            log(`   loginSection visible: ${!loginSection.classList.contains('hidden')}`);
+            log(`   loggedInSection visible: ${!loggedInSection.classList.contains('hidden')}`);
+        }
+        
+        // Initialize
+        function init() {
+            log('🚀 Initializing test app...');
+            
+            // Check if already logged in
+            const storedToken = localStorage.getItem('accessToken');
+            const storedUser = localStorage.getItem('currentUser');
+            
+            if (storedToken && storedUser) {
+                log('📱 Found stored credentials, auto-login...');
+                accessToken = storedToken;
+                currentUser = JSON.parse(storedUser);
+            }
+            
+            updateUI();
+            checkState();
+        }
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>
