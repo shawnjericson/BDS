@@ -51,58 +51,93 @@ export class RevenueLedgerService {
       
       console.log('📊 Commission data:', commissionData);
 
+      // Get seller rank info for percentage calculation
+      const sellerRank = await this.prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+          seller: {
+            include: {
+              userRanks: {
+                where: { effectiveTo: null },
+                include: {
+                  rank: {
+                    include: {
+                      rankShares: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const sellerRankShares = sellerRank?.seller?.userRanks?.[0]?.rank?.rankShares || [];
+      const sellerShare = sellerRankShares.find(rs => rs.role === 'SELLER');
+      const referrerShare = sellerRankShares.find(rs => rs.role === 'REFERRER');
+      const managerShare = sellerRankShares.find(rs => rs.role === 'MANAGER');
+
       // Create revenue ledger entries for ALL 4 roles (provider, seller, manager, referrer)
       const ledgerEntries: Array<{
         bookingId: number;
         role: string;
         beneficiaryUserId: number;
         amount: number;
+        pct: number;
       }> = [];
 
       // 1. Provider revenue (always exists if product has owner)
       if (commissionData.provider.user_id) {
+        const providerPct = Number(booking.product?.providerDesiredPct || 0);
         ledgerEntries.push({
           bookingId,
           role: 'provider',
           beneficiaryUserId: commissionData.provider.user_id,
           amount: commissionData.provider.amount || 0,
+          pct: providerPct,
         });
-        console.log(`  📝 Provider: User ${commissionData.provider.user_id} = ${commissionData.provider.amount}`);
+        console.log(`  📝 Provider: User ${commissionData.provider.user_id} = ${commissionData.provider.amount} (${(providerPct * 100).toFixed(2)}%)`);
       }
 
       // 2. Seller revenue (always exists)
       if (commissionData.seller.user_id) {
+        const sellerPct = Number(sellerShare?.pct || 0);
         ledgerEntries.push({
           bookingId,
           role: 'seller',
           beneficiaryUserId: commissionData.seller.user_id,
           amount: commissionData.seller.amount || 0,
+          pct: sellerPct,
         });
-        console.log(`  📝 Seller: User ${commissionData.seller.user_id} = ${commissionData.seller.amount}`);
+        console.log(`  📝 Seller: User ${commissionData.seller.user_id} = ${commissionData.seller.amount} (${(sellerPct * 100).toFixed(2)}%)`);
       }
 
       // 3. Referrer revenue (may be null if no referrer)
       if (commissionData.referrer?.user_id) {
+        const referrerPct = Number(referrerShare?.pct || 0);
         ledgerEntries.push({
           bookingId,
           role: 'referrer',
           beneficiaryUserId: commissionData.referrer.user_id,
           amount: commissionData.referrer.amount || 0,
+          pct: referrerPct,
         });
-        console.log(`  📝 Referrer: User ${commissionData.referrer.user_id} = ${commissionData.referrer.amount}`);
+        console.log(`  📝 Referrer: User ${commissionData.referrer.user_id} = ${commissionData.referrer.amount} (${(referrerPct * 100).toFixed(2)}%)`);
       } else {
         console.log(`  📝 Referrer: None`);
       }
 
       // 4. Manager revenue (may be null if no manager)
       if (commissionData.manager?.user_id) {
+        const managerPct = Number(managerShare?.pct || 0);
         ledgerEntries.push({
           bookingId,
           role: 'manager',
           beneficiaryUserId: commissionData.manager.user_id,
           amount: commissionData.manager.amount || 0,
+          pct: managerPct,
         });
-        console.log(`  📝 Manager: User ${commissionData.manager.user_id} = ${commissionData.manager.amount}`);
+        console.log(`  📝 Manager: User ${commissionData.manager.user_id} = ${commissionData.manager.amount} (${(managerPct * 100).toFixed(2)}%)`);
       } else {
         console.log(`  📝 Manager: None`);
       }
@@ -410,7 +445,7 @@ export class RevenueLedgerService {
 
     entries.forEach(entry => {
       const amount = Number(entry.amount || 0);
-      const percentage = bookingPrice > 0 ? (amount / bookingPrice) * 100 : 0;
+      const percentage = Number(entry.pct || 0);
 
       if (entry.role === 'provider') {
         result.provider = {

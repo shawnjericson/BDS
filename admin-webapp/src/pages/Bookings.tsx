@@ -383,7 +383,7 @@ function Bookings() {
                           <div className="text-gray-400 text-xs">Loading...</div>
                         ) : commission?.provider?.user ? (
                           <div className="text-green-600 font-medium text-xs">
-                            {commission.provider.percentage.toFixed(4)}% ({formatPrice(commission.provider.amount)})
+                            {formatCommission(commission.provider.percentage, commission.provider.amount)}
                           </div>
                         ) : (
                           <div className="text-gray-400 text-xs">No data</div>
@@ -397,7 +397,7 @@ function Bookings() {
                           <div className="text-gray-400 text-xs">Loading...</div>
                         ) : commission?.referrer?.user ? (
                           <div className="text-green-600 font-medium text-xs">
-                            {commission.referrer.percentage.toFixed(4)}% ({formatPrice(commission.referrer.amount)})
+                            {formatCommission(commission.referrer.percentage, commission.referrer.amount)}
                           </div>
                         ) : (
                           <div className="text-gray-400 text-xs">No data</div>
@@ -411,7 +411,7 @@ function Bookings() {
                           <div className="text-gray-400 text-xs">Loading...</div>
                         ) : commission?.seller?.user ? (
                           <div className="text-green-600 font-medium text-xs">
-                            {commission.seller.percentage.toFixed(4)}% ({formatPrice(commission.seller.amount)})
+                            {formatCommission(commission.seller.percentage, commission.seller.amount)}
                           </div>
                         ) : (
                           <div className="text-gray-400 text-xs">No data</div>
@@ -425,7 +425,7 @@ function Bookings() {
                           <div className="text-gray-400 text-xs">Loading...</div>
                         ) : commission?.manager?.user ? (
                           <div className="text-green-600 font-medium text-xs">
-                            {commission.manager.percentage.toFixed(4)}% ({formatPrice(commission.manager.amount)})
+                            {formatCommission(commission.manager.percentage, commission.manager.amount)}
                           </div>
                         ) : (
                           <div className="text-gray-400 text-xs">No data</div>

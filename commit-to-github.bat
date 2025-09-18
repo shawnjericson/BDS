@@ -29,22 +29,22 @@ git add .
 
 REM Commit with detailed message
 echo 💾 Committing changes...
-git commit -m "Fix commission percentage display and optimize booking APIs
+git commit -m "Fix commission percentage display in admin booking management
 
-- Fixed percentage display in admin webapp booking management
-- Updated revenue ledger service to store correct percentages in pct column  
-- Modified booking APIs to query from revenue_ledger instead of recalculating
-- Fixed booking 21 referrer percentage display (now shows 6%% correctly)
-- Optimized commission calculation performance by using stored data
-- Updated admin webapp to use formatCommission for proper percentage display
-- Reordered table columns: Provider -> Seller -> Referrer -> Manager
+CRITICAL FIX: Fixed booking 21 referrer percentage display from 0.3%% to 6.0000%% correctly
 
-Technical changes:
-- backend/src/revenue/revenue-ledger.service.ts: Store rank-based percentages in pct column
-- backend/src/bookings/bookings.service.ts: Query from revenue_ledger for performance
-- backend/src/commission/commission-calculator.service.ts: Use stored ledger data
-- admin-webapp/src/pages/Bookings.tsx: Use formatCommission and reorder columns
-- backend/recalculate-revenue.js: Updated to store correct percentages"
+Key Changes:
+- Fixed getBookingCommissionFromLedger() to use entry.pct from database instead of calculating (amount/bookingPrice)*100
+- Updated admin webapp to use formatCommission() for all percentage displays
+- Maintained original commission calculation logic (no changes to business rules)
+- Only optimized data retrieval from revenue_ledger for admin display
+
+Technical Details:
+- backend/src/revenue/revenue-ledger.service.ts: Use Number(entry.pct || 0) instead of (amount/bookingPrice)*100
+- admin-webapp/src/pages/Bookings.tsx: Replace percentage.toFixed(4)%% with formatCommission()
+- Revenue ledger already contains correct pct values, just needed to use them properly
+
+Result: Booking 21 referrer now shows 6.0000%% (rank 5 = 6%%) instead of incorrect 0.3%%"
 
 REM Push to GitHub
 echo 🚀 Pushing to GitHub...
