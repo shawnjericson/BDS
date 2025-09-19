@@ -2,6 +2,7 @@ import { Injectable, ConflictException, NotFoundException, BadRequestException }
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, RegisterDto } from './dto/create-user.dto';
 import { UserRevenueDto, UserRevenueSummary, RevenueSource, BookingRoleStats, RecentBookingRevenue } from './dto/user-revenue.dto';
+import { DownlineUserDto, DownlineStatsDto } from './dto/downline.dto';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { RevenueLedgerService } from '../revenue/revenue-ledger.service';
@@ -1170,5 +1171,115 @@ export class UsersService {
     console.log(`✅ Admin created user ${user.id} with role ${role} - no auto-rank assignment`);
 
     return user;
+  }
+
+  // Downline Management Methods
+  async getMyDownline(userId: number): Promise<DownlineUserDto[]> {
+    const downlineUsers = await this.prisma.appUser.findMany({
+      where: {
+        referredBy: userId,
+      },
+      include: {
+        userRanks: {
+          where: { effectiveTo: null },
+          include: {
+            rank: true,
+          },
+        },
+        referrals: {
+          select: {
+            id: true,
+            status: true,
+          },
+        },
+        sellerBookings: {
+          select: {
+            id: true,
+            price: true,
+            createdAt: true,
+          },
+        },
+        revenueLedger: {
+          select: {
+            amount: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    const currentDate = new Date();
+    const currentMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+
+    return downlineUsers.map(user => {
+      const totalRevenue = user.revenueLedger.reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+      const monthlyRevenue = user.revenueLedger
+        .filter(entry => entry.createdAt && new Date(entry.createdAt) >= currentMonth)
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+
+      const totalBookings = user.sellerBookings.length;
+      const monthlyBookings = user.sellerBookings
+        .filter(booking => new Date(booking.createdAt) >= currentMonth)
+        .length;
+
+      const totalReferrals = user.referrals.length;
+      const activeReferrals = user.referrals.filter(ref => ref.status === 'ACTIVE').length;
+
+      return {
+        id: user.id,
+        fullName: user.fullName,
+        nickname: user.fullName.split(' ')[0], // Tạm thời dùng tên đầu làm nickname
+        email: user.email || undefined,
+        referralCode: user.referralCode || undefined,
+        role: user.role,
+        status: user.status,
+        createdAt: user.createdAt.toISOString(),
+        totalRevenue,
+        totalBookings,
+        monthlyRevenue,
+        monthlyBookings,
+        currentRank: user.userRanks[0]?.rank ? {
+          id: user.userRanks[0].rank.id,
+          name: user.userRanks[0].rank.name,
+        } : undefined,
+        totalReferrals,
+        activeReferrals,
+      };
+    });
+  }
+
+  async getDownlineStats(userId: number): Promise<DownlineStatsDto> {
+    const downline = await this.getMyDownline(userId);
+
+    const totalMembers = downline.length;
+    const activeMembers = downline.filter(user => user.status === 'ACTIVE').length;
+    const totalRevenue = downline.reduce((sum, user) => sum + user.totalRevenue, 0);
+    const monthlyRevenue = downline.reduce((sum, user) => sum + user.monthlyRevenue, 0);
+    const totalBookings = downline.reduce((sum, user) => sum + user.totalBookings, 0);
+    const monthlyBookings = downline.reduce((sum, user) => sum + user.monthlyBookings, 0);
+
+    // Top 5 performers by monthly revenue
+    const topPerformers = downline
+      .sort((a, b) => b.monthlyRevenue - a.monthlyRevenue)
+      .slice(0, 5);
+
+    return {
+      totalMembers,
+      activeMembers,
+      totalRevenue,
+      monthlyRevenue,
+      totalBookings,
+      monthlyBookings,
+      topPerformers,
+    };
+  }
+
+  async updateUserNickname(userId: number, nickname: string) {
+    // TODO: Uncomment when nickname column is added to database
+    // return this.prisma.appUser.update({
+    //   where: { id: userId },
+    //   data: { nickname },
+    // });
+    return { message: 'Nickname update will be available after database migration' };
   }
 }

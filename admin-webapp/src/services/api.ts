@@ -201,6 +201,22 @@ class ApiService {
     const response = await this.api.get(`/admin/bookings/${bookingId}/commission-ledger`)
     return response.data
   }
+
+  // Downline Management APIs
+  async getMyDownline(): Promise<any> {
+    const response = await this.api.get('/admin/downline')
+    return response.data
+  }
+
+  async getDownlineStats(): Promise<any> {
+    const response = await this.api.get('/admin/downline/stats')
+    return response.data
+  }
+
+  async updateMyNickname(nickname: string): Promise<any> {
+    const response = await this.api.patch('/users/me/nickname', { nickname })
+    return response.data
+  }
 }
 
 export const apiService = new ApiService()

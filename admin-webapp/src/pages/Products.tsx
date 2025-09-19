@@ -39,6 +39,19 @@ function Products() {
     }, 3000)
   }
 
+  // Format price function
+  const formatPrice = (price: number | null | undefined) => {
+    if (!price || price === 0) return '0 VND';
+
+    if (price >= 1000000000) {
+      return `${(price / 1000000000).toFixed(1)} tỷ`;
+    } else if (price >= 1000000) {
+      return `${(price / 1000000).toFixed(0)} triệu`;
+    } else {
+      return `${price.toLocaleString()} VND`;
+    }
+  };
+
   const loadProducts = async () => {
     try {
       setLoading(true)
@@ -269,9 +282,7 @@ function Products() {
                     className="rounded"
                   />
                 </th>
-                <th>Tên sản phẩm</th>
-                <th>Mô tả</th>
-                <th>Giá</th>
+                <th className="w-64">Thông tin sản phẩm</th>
                 <th>Hoa hồng</th>
                 <th>Chủ sở hữu</th>
                 <th>Trạng thái</th>
@@ -290,18 +301,18 @@ function Products() {
                       className="rounded"
                     />
                   </td>
-                  <td>
-                    <div className="font-medium text-gray-900">{product.name}</div>
-                  </td>
-                  <td>
-                    <div className="text-sm text-gray-600 max-w-xs truncate">
-                      {product.description}
+                  <td className="w-64">
+                    <div className="space-y-1">
+                      <div className="font-medium text-gray-900 text-sm leading-tight">
+                        {product.name}
+                      </div>
+                      <div className="text-xs text-gray-600 leading-normal break-words whitespace-normal max-w-60">
+                        {product.description || 'Không có mô tả'}
+                      </div>
+                      <div className="font-semibold text-green-600 text-sm">
+                        {formatPrice(product.price)}
+                      </div>
                     </div>
-                  </td>
-                  <td>
-                    <span className="font-medium text-green-600">
-                      {product.price?.toLocaleString()} VND
-                    </span>
                   </td>
                   <td>
                     <div className="text-sm">

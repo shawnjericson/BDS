@@ -186,5 +186,12 @@ export declare class UsersController {
         message: string;
         timestamp: string;
     };
+    getMyDownline(req: AuthenticatedRequest): Promise<import("./dto/downline.dto").DownlineUserDto[]>;
+    getDownlineStats(req: AuthenticatedRequest): Promise<import("./dto/downline.dto").DownlineStatsDto>;
+    updateMyNickname(req: AuthenticatedRequest, body: {
+        nickname: string;
+    }): Promise<{
+        message: string;
+    }>;
 }
 export {};

@@ -1,6 +1,7 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, RegisterDto } from './dto/create-user.dto';
 import { UserRevenueDto, UserRevenueSummary } from './dto/user-revenue.dto';
+import { DownlineUserDto, DownlineStatsDto } from './dto/downline.dto';
 import { RevenueLedgerService } from '../revenue/revenue-ledger.service';
 import { RanksService } from '../ranks/ranks.service';
 export declare class UsersService {
@@ -237,5 +238,10 @@ export declare class UsersService {
         fullName: string;
         status: string;
         createdAt: Date;
+    }>;
+    getMyDownline(userId: number): Promise<DownlineUserDto[]>;
+    getDownlineStats(userId: number): Promise<DownlineStatsDto>;
+    updateUserNickname(userId: number, nickname: string): Promise<{
+        message: string;
     }>;
 }

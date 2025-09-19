@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -89,11 +89,22 @@ export class UsersController {
     };
   }
 
+  // Downline Management Endpoints
+  @UseGuards(JwtAuthGuard)
+  @Get('me/downline')
+  getMyDownline(@Request() req: AuthenticatedRequest) {
+    return this.usersService.getMyDownline(req.user.id);
+  }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('me/downline/stats')
+  getDownlineStats(@Request() req: AuthenticatedRequest) {
+    return this.usersService.getDownlineStats(req.user.id);
+  }
 
-
-
-
-
-
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/nickname')
+  updateMyNickname(@Request() req: AuthenticatedRequest, @Body() body: { nickname: string }) {
+    return this.usersService.updateUserNickname(req.user.id, body.nickname);
+  }
 }
